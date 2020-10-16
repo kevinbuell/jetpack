@@ -131,6 +131,8 @@ add_filter( 'body_class', 'twentynineteen_jetpack_body_classes' );
  * @return void
  */
 function amp_twentynineteen_infinite_scroll_render_hooks() {
+	//add_filter( 'jetpack_amp_infinite_footers', 'twentynineteen_amp_infinite_footers', 10, 2 );
+	//add_filter( 'jetpack_amp_infinite_output', 'twentynineteen_amp_infinite_output' );
 	add_filter( 'jetpack_amp_infinite_older_posts', 'twentynineteen_amp_infinite_older_posts' );
 }
 

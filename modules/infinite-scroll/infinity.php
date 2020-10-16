@@ -1773,20 +1773,15 @@ class The_Neverending_Home_Page {
 			0
 		);
 
-		return;
 		$template = self::get_settings()->render;
-
-
-		return;
-
 
 		//add_action( 'template_redirect', array( $this, 'amp_start_output_buffering' ), 0 );
 		//add_action( 'shutdown', array( $this, 'amp_output_buffer' ), 1 );
 
 		// @todo No? e.g. amp_twentynineteen_infinite_scroll_render_hooks().
-		// if ( is_callable( "amp_{$template}_hooks" ) ) {
-		// 	call_user_func( "amp_{$template}_hooks" );
-		// }
+		 if ( is_callable( "amp_{$template}_hooks" ) ) {
+		 	call_user_func( "amp_{$template}_hooks" );
+		 }
 
 		// Warms up the amp next page markup.
 		// This should be done outside the output buffering callback started in the template_redirect.
@@ -1894,9 +1889,9 @@ class The_Neverending_Home_Page {
 	public function render_amp_next_page() {
 		$config = $this->amp_next_page();
 
-		if ( ! empty( $config['url'] ) ) {
-			$config['url'] = add_query_arg( 'amp_next_page', '1', $config['url'] );
-		}
+//		if ( ! empty( $config['url'] ) ) {
+//			$config['url'] = add_query_arg( 'amp_next_page', '1', $config['url'] );
+//		}
 
 		?>
 <amp-next-page class="jetpack-infinite-scroll" max-pages="<?php echo esc_attr( $this->amp_get_max_pages() ); ?>">
