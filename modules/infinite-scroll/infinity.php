@@ -1748,47 +1748,70 @@ class The_Neverending_Home_Page {
 	 * @return void
 	 */
 	public function amp_load_hooks() {
-		if ( $this->is_exempted_amp_page() ) {
+		if (
+			! class_exists( 'Jetpack_AMP_Support' )
+			||
+			! Jetpack_AMP_Support::is_amp_request()
+			||
+			$this->is_exempted_amp_page()
+		) {
+			// @todo Should also return if theme is not twentynineteen or twentytwenty?
 			return;
 		}
 
-		if ( class_exists( 'Jetpack_AMP_Support' ) && Jetpack_AMP_Support::is_amp_request() ) {
-			$template = self::get_settings()->render;
+		add_action( 'wp_footer', array( $this, 'render_amp_next_page' ) );
 
-			add_filter( 'jetpack_infinite_scroll_load_scripts_and_styles', '__return_false' );
+		add_filter( 'jetpack_infinite_scroll_load_scripts_and_styles', '__return_false' );
 
-			add_action( 'template_redirect', array( $this, 'amp_start_output_buffering' ), 0 );
-			add_action( 'shutdown', array( $this, 'amp_output_buffer' ), 1 );
+		require_once __DIR__ . '/class-jetpack-amp-infinite-scroll-sanitizer.php';
+		add_filter(
+			'amp_content_sanitizers',
+			function ( $sanitizers ) {
+				$sanitizers['Jetpack_AMP_Infinite_Scroll_Sanitizer'] = array();
+				return $sanitizers;
+			},
+			0
+		);
 
-			if ( is_callable( "amp_{$template}_hooks" ) ) {
-				call_user_func( "amp_{$template}_hooks" );
-			}
+		return;
+		$template = self::get_settings()->render;
 
-			// Warms up the amp next page markup.
-			// This should be done outside the output buffering callback started in the template_redirect.
-			$this->amp_get_footer_template();
-		}
+
+		return;
+
+
+		//add_action( 'template_redirect', array( $this, 'amp_start_output_buffering' ), 0 );
+		//add_action( 'shutdown', array( $this, 'amp_output_buffer' ), 1 );
+
+		// @todo No? e.g. amp_twentynineteen_infinite_scroll_render_hooks().
+		// if ( is_callable( "amp_{$template}_hooks" ) ) {
+		// 	call_user_func( "amp_{$template}_hooks" );
+		// }
+
+		// Warms up the amp next page markup.
+		// This should be done outside the output buffering callback started in the template_redirect.
+		// $this->amp_get_footer_template();
 	}
 
-	/**
-	 * Start the AMP output buffering.
-	 *
-	 * @return void
-	 */
-	public function amp_start_output_buffering() {
-		ob_start( array( $this, 'amp_finish_output_buffering' ) );
-	}
+	///**
+	// * Start the AMP output buffering.
+	// *
+	// * @return void
+	// */
+	//public function amp_start_output_buffering() {
+	//	ob_start( array( $this, 'amp_finish_output_buffering' ) );
+	//}
 
-	/**
-	 * Flush the AMP output buffer.
-	 *
-	 * @return void
-	 */
-	public function amp_output_buffer() {
-		if ( ob_get_contents() ) {
-			ob_end_flush();
-		}
-	}
+	///**
+	// * Flush the AMP output buffer.
+	// *
+	// * @return void
+	// */
+	//public function amp_output_buffer() {
+	//	if ( ob_get_contents() ) {
+	//		ob_end_flush();
+	//	}
+	//}
 
 	/**
 	 * Filter the AMP output buffer contents.
@@ -1798,6 +1821,7 @@ class The_Neverending_Home_Page {
 	 * @return string|false
 	 */
 	public function amp_finish_output_buffering( $buffer ) {
+		// @todo Wrong! There should be a query param which is added to the next page request which causes the admin bar to be hidden.
 		// Hide WordPress admin bar on next page load.
 		$buffer = preg_replace(
 			'/id="wpadminbar"/',
@@ -1846,38 +1870,37 @@ class The_Neverending_Home_Page {
 	 *
 	 * @return string
 	 */
-	protected function amp_get_footer_template( $footers = array() ) {
-		static $template = null;
-
-		if ( null === $template ) {
-			$template = $this->amp_footer_template();
-		}
-
-		if ( empty( $footers ) ) {
-			return $template;
-		}
-
-		return preg_replace(
-			'/%%footer%%/',
-			implode( '', $footers ),
-			$template
-		);
-	}
+//	protected function amp_get_footer_template( $footers = array() ) {
+//		static $template = null;
+//
+//		if ( null === $template ) {
+//			$template = $this->render_amp_next_page();
+//		}
+//
+//		if ( empty( $footers ) ) {
+//			return $template;
+//		}
+//
+//		return preg_replace(
+//			'/%%footer%%/',
+//			implode( '', $footers ),
+//			$template
+//		);
+//	}
 
 	/**
 	 * AMP Next Page markup.
-	 *
-	 * @return string
 	 */
-	protected function amp_footer_template() {
-		ob_start();
+	public function render_amp_next_page() {
+		$config = $this->amp_next_page();
+
+		if ( ! empty( $config['url'] ) ) {
+			$config['url'] = add_query_arg( 'amp_next_page', '1', $config['url'] );
+		}
+
 		?>
-<amp-next-page max-pages="<?php echo esc_attr( $this->amp_get_max_pages() ); ?>">
-	<script type="application/json">
-		[
-			<?php echo wp_json_encode( $this->amp_next_page() ); ?>
-		]
-	</script>
+<amp-next-page class="jetpack-infinite-scroll" max-pages="<?php echo esc_attr( $this->amp_get_max_pages() ); ?>">
+	<script type="application/json"><?php echo wp_json_encode( array( $config ) ); ?></script>
 	<div separator>
 		<?php
 		echo wp_kses_post(
@@ -1915,11 +1938,9 @@ class The_Neverending_Home_Page {
 		</template>
 	</div>
 	<div footer>
-		%%footer%%
 	</div>
 </amp-next-page>
 		<?php
-		return ob_get_clean();
 	}
 
 	/**

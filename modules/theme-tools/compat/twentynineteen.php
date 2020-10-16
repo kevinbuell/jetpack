@@ -131,20 +131,48 @@ add_filter( 'body_class', 'twentynineteen_jetpack_body_classes' );
  * @return void
  */
 function amp_twentynineteen_infinite_scroll_render_hooks() {
-	add_filter( 'jetpack_amp_infinite_footers', 'twentynineteen_amp_infinite_footers', 10, 2 );
-	add_filter( 'jetpack_amp_infinite_output', 'twentynineteen_amp_infinite_output' );
 	add_filter( 'jetpack_amp_infinite_older_posts', 'twentynineteen_amp_infinite_older_posts' );
 }
 
 /**
+ * Add arguments to the infinite scroll sanitizer.
+ *
+ * @param array $sanitizers Sanitizers.
+ * @return array Sanitizers.
+ */
+function twentynineteen_filter_amp_infinite_scroll_sanitizers( $sanitizers ) {
+	if ( ! array_key_exists( 'Jetpack_AMP_Infinite_Scroll_Sanitizer', $sanitizers ) ) {
+		return $sanitizers;
+	}
+
+	$sanitizers['Jetpack_AMP_Infinite_Scroll_Sanitizer'] = array_merge(
+		$sanitizers['Jetpack_AMP_Infinite_Scroll_Sanitizer'],
+		array(
+			// Formerly twentynineteen_amp_infinite_footers.
+			'footer_xpath'          => '//footer[ @id = "colophon" ]',
+			'next_page_hide_xpaths' => array(
+				'//*[ @id = "masthead" ]',
+				'//*[ contains( @class, "navigation pagination" ) ]',
+			),
+		)
+	);
+
+	return $sanitizers;
+}
+add_filter( 'amp_content_sanitizers', 'twentynineteen_filter_amp_infinite_scroll_sanitizers' );
+
+/**
  * Get the theme specific footers.
  *
+ * @deprecated
  * @param array  $footers The footers of the themes.
  * @param string $buffer  Contents of the output buffer.
  *
  * @return mixed
  */
 function twentynineteen_amp_infinite_footers( $footers, $buffer ) {
+	_deprecated_function( __FUNCTION__, 'jetpack-9.1' );
+
 	// Collect the footer wrapper.
 	preg_match(
 		'/<footer id="colophon".*<!-- #colophon -->/s',
@@ -159,11 +187,14 @@ function twentynineteen_amp_infinite_footers( $footers, $buffer ) {
 /**
  * Hide and remove various elements from next page load.
  *
+ * @deprecated
  * @param string $buffer Contents of the output buffer.
  *
  * @return string
  */
 function twentynineteen_amp_infinite_output( $buffer ) {
+	_deprecated_function( __FUNCTION__, 'jetpack-9.1' );
+
 	// Hide site header on next page load.
 	$buffer = preg_replace(
 		'/id="masthead"/',
