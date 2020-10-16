@@ -1775,124 +1775,16 @@ class The_Neverending_Home_Page {
 
 		$template = self::get_settings()->render;
 
-		//add_action( 'template_redirect', array( $this, 'amp_start_output_buffering' ), 0 );
-		//add_action( 'shutdown', array( $this, 'amp_output_buffer' ), 1 );
-
-		// @todo No? e.g. amp_twentynineteen_infinite_scroll_render_hooks().
-		 if ( is_callable( "amp_{$template}_hooks" ) ) {
-		 	call_user_func( "amp_{$template}_hooks" );
-		 }
-
-		// Warms up the amp next page markup.
-		// This should be done outside the output buffering callback started in the template_redirect.
-		// $this->amp_get_footer_template();
+		if ( is_callable( "amp_{$template}_hooks" ) ) {
+			call_user_func( "amp_{$template}_hooks" );
+		}
 	}
-
-	///**
-	// * Start the AMP output buffering.
-	// *
-	// * @return void
-	// */
-	//public function amp_start_output_buffering() {
-	//	ob_start( array( $this, 'amp_finish_output_buffering' ) );
-	//}
-
-	///**
-	// * Flush the AMP output buffer.
-	// *
-	// * @return void
-	// */
-	//public function amp_output_buffer() {
-	//	if ( ob_get_contents() ) {
-	//		ob_end_flush();
-	//	}
-	//}
-
-	/**
-	 * Filter the AMP output buffer contents.
-	 *
-	 * @param string $buffer Contents of the output buffer.
-	 *
-	 * @return string|false
-	 */
-	public function amp_finish_output_buffering( $buffer ) {
-		// @todo Wrong! There should be a query param which is added to the next page request which causes the admin bar to be hidden.
-		// Hide WordPress admin bar on next page load.
-		$buffer = preg_replace(
-			'/id="wpadminbar"/',
-			'$0 next-page-hide',
-			$buffer
-		);
-
-		/**
-		 * Get the theme footers.
-		 *
-		 * @module infinite-scroll
-		 *
-		 * @since 9.0.0
-		 *
-		 * @param array  array() An array to store multiple markup entries to be added to the footer.
-		 * @param string $buffer The contents of the output buffer.
-		 */
-		$footers = apply_filters( 'jetpack_amp_infinite_footers', array(), $buffer );
-
-		/**
-		 * Filter the output buffer.
-		 * Themes can leverage this hook to add custom markup on next page load.
-		 *
-		 * @module infinite-scroll
-		 *
-		 * @since 9.0.0
-		 *
-		 * @param string $buffer The contents of the output buffer.
-		 */
-		$buffer = apply_filters( 'jetpack_amp_infinite_output', $buffer );
-
-		// Add the amp next page markup.
-		$buffer = preg_replace(
-			'~</body>~',
-			$this->amp_get_footer_template( $footers ) . '$0',
-			$buffer
-		);
-
-		return $buffer;
-	}
-
-	/**
-	 * Get AMP next page markup with the custom footers.
-	 *
-	 * @param string[] $footers The theme footers.
-	 *
-	 * @return string
-	 */
-//	protected function amp_get_footer_template( $footers = array() ) {
-//		static $template = null;
-//
-//		if ( null === $template ) {
-//			$template = $this->render_amp_next_page();
-//		}
-//
-//		if ( empty( $footers ) ) {
-//			return $template;
-//		}
-//
-//		return preg_replace(
-//			'/%%footer%%/',
-//			implode( '', $footers ),
-//			$template
-//		);
-//	}
 
 	/**
 	 * AMP Next Page markup.
 	 */
 	public function render_amp_next_page() {
 		$config = $this->amp_next_page();
-
-//		if ( ! empty( $config['url'] ) ) {
-//			$config['url'] = add_query_arg( 'amp_next_page', '1', $config['url'] );
-//		}
-
 		?>
 <amp-next-page class="jetpack-infinite-scroll" max-pages="<?php echo esc_attr( $this->amp_get_max_pages() ); ?>">
 	<script type="application/json"><?php echo wp_json_encode( array( $config ) ); ?></script>
